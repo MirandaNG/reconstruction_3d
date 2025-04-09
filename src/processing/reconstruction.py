@@ -1,5 +1,11 @@
-def reconstruir_desde_imagenes(rutas_imagenes):
-    print(f"Reconstruyendo modelo 3D desde {len(rutas_imagenes)} imagen(es)...")
-    # Lógica de reconstrucción específica irá en cada rama
-    # Aquí solo simulamos la salida
-    return "modelo_reconstruido.obj"
+from .triangulation_utils import procesar_imagenes_con_triangulacion, generar_relieve_desde_una_imagen
+
+def reconstruir_desde_imagenes(rutas):
+    if len(rutas) == 1:
+        generar_relieve_desde_una_imagen(rutas[0])
+        return "relieve.obj"
+    elif len(rutas) >= 2:
+        procesar_imagenes_con_triangulacion(rutas)
+        return "triangulacion.obj"
+    else:
+        return None
