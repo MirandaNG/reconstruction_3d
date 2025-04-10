@@ -36,25 +36,25 @@ def iniciar_interfaz():
             # Mover las imágenes a data/input
             rutas_imagenes = mover_imagenes_a_input(rutas_imagenes)
             messagebox.showinfo("Imágenes seleccionadas", f"{len(rutas_imagenes)} imagen(es) cargada(s).")
-
-    def reconstruir_modelo():
-        if rutas_imagenes:
+            
+            # Realizar la reconstrucción del modelo de inmediato
             modelo = reconstruir_desde_imagenes(rutas_imagenes)
-            messagebox.showinfo("Reconstrucción", f"Modelo generado: {modelo}")
-        else:
-            messagebox.showwarning("Error", "No se han seleccionado imágenes.")
+            if modelo:
+                # Preguntar si desea guardar el modelo generado
+                respuesta = messagebox.askyesno("Guardar Modelo", "¿Desea guardar el modelo generado?")
+                if respuesta:
+                    formato, ruta = guardar_modelo()
+                    if ruta:
+                        messagebox.showinfo("Guardado", f"Modelo exportado como {formato} en:\n{ruta}")
+                    else:
+                        messagebox.showerror("Error", "No se pudo guardar el modelo.")
+                mostrar_modelo()  # Mostrar el modelo generado
 
-    def guardar_modelo_3d():
-        formato, ruta = guardar_modelo()
-        if ruta:
-            messagebox.showinfo("Guardado", f"Modelo exportado como {formato} en:\n{ruta}")
-        elif formato == "Formato no válido":
-            messagebox.showerror("Error", "Formato de archivo no válido.")
+    def visualizar_modelo():
+        mostrar_modelo()
 
     # Botones GUI
     ttk.Button(ventana, text="Cargar Imágenes", command=cargar_imagenes).pack(pady=10)
-    ttk.Button(ventana, text="Reconstruir Modelo", command=reconstruir_modelo).pack(pady=10)
-    ttk.Button(ventana, text="Guardar Modelo 3D", command=guardar_modelo_3d).pack(pady=10)
-    ttk.Button(ventana, text="Previsualizar Modelo", command=mostrar_modelo).pack(pady=10)
+    ttk.Button(ventana, text="Visualizar Modelo", command=visualizar_modelo).pack(pady=10)
 
     ventana.mainloop()
