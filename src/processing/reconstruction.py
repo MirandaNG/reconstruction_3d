@@ -1,11 +1,10 @@
-from .triangulation_utils import procesar_imagenes_con_triangulacion, generar_relieve_desde_una_imagen
+from src.processing.reconstruction_blender import reconstruir_con_una_imagen, reconstruir_con_multiples_imagenes
 
-def reconstruir_desde_imagenes(rutas):
-    if len(rutas) == 1:
-        generar_relieve_desde_una_imagen(rutas[0])
-        return "relieve.obj"
-    elif len(rutas) >= 2:
-        procesar_imagenes_con_triangulacion(rutas)
-        return "triangulacion.obj"
+def reconstruir_desde_imagenes(rutas_imagenes):
+    if len(rutas_imagenes) == 1:
+        return reconstruir_con_una_imagen(rutas_imagenes[0])
+    elif len(rutas_imagenes) > 1:
+        return reconstruir_con_multiples_imagenes(rutas_imagenes)
     else:
+        print("[ERROR] No se proporcionaron imágenes.")
         return None

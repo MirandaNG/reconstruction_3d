@@ -5,3 +5,4 @@ numpy
 vtk
 matplotlib
 scipy
+fake-bpy-module-latest

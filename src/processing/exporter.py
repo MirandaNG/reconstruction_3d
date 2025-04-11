@@ -1,26 +1,34 @@
 import os
+import shutil
+from tkinter import filedialog
 
-def exportar_modelo_obj(puntos_3d, ruta_imagen):
-    # Usa la ruta de la imagen para crear el nombre del archivo
-    nombre_archivo = os.path.splitext(os.path.basename(ruta_imagen))[0] + ".obj"
-    ruta = os.path.join("data", "output", nombre_archivo)
+def guardar_modelo():
+    ruta_origen = encontrar_modelo_mas_reciente()
 
-    os.makedirs(os.path.dirname(ruta), exist_ok=True)
-    
-    with open(ruta, 'w') as f:
-        for punto in puntos_3d:
-            f.write(f"v {punto[0]} {punto[1]} {punto[2]}\n")
-        print(f"[OK] Modelo 3D guardado en {ruta}")
+    if not ruta_origen:
+        print("[ERROR] No se encontró ningún modelo para guardar.")
+        return None, None
 
-def guardar_como_obj(ruta_imagen, vertices, caras):
-    nombre_archivo = os.path.splitext(os.path.basename(ruta_imagen))[0] + ".obj"
-    ruta = os.path.join("data", "output", nombre_archivo)
+    ruta_destino = filedialog.asksaveasfilename(
+        defaultextension=".obj",
+        filetypes=[("Archivo OBJ", "*.obj")],
+        initialfile=os.path.basename(ruta_origen)
+    )
 
-    os.makedirs(os.path.dirname(ruta), exist_ok=True)
-    with open(ruta, 'w') as f:
-        for v in vertices:
-            f.write(f"v {v[0]} {v[1]} {v[2]}\n")
-        for c in caras:
-            f.write(f"f {c[0]+1} {c[1]+1} {c[2]+1}\n")
-    print(f"[OK] Modelo 3D guardado en {ruta}")
+    if ruta_destino:
+        shutil.copy(ruta_origen, ruta_destino)
+        print(f"[INFO] Modelo guardado en: {ruta_destino}")
+        return "OBJ", ruta_destino
+    else:
+        return None, None
 
+def encontrar_modelo_mas_reciente():
+    carpeta_output = os.path.join("data", "output")
+    if not os.path.exists(carpeta_output):
+        return None
+
+    archivos = [os.path.join(carpeta_output, f) for f in os.listdir(carpeta_output) if f.endswith(".obj")]
+    if not archivos:
+        return None
+
+    return max(archivos, key=os.path.getctime)

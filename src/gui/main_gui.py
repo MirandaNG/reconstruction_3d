@@ -37,10 +37,9 @@ def iniciar_interfaz():
             rutas_imagenes = mover_imagenes_a_input(rutas_imagenes)
             messagebox.showinfo("Imágenes seleccionadas", f"{len(rutas_imagenes)} imagen(es) cargada(s).")
             
-            # Realizar la reconstrucción del modelo de inmediato
+            # Reconstrucción del modelo usando Blender
             modelo = reconstruir_desde_imagenes(rutas_imagenes)
             if modelo:
-                # Preguntar si desea guardar el modelo generado
                 respuesta = messagebox.askyesno("Guardar Modelo", "¿Desea guardar el modelo generado?")
                 if respuesta:
                     formato, ruta = guardar_modelo()
@@ -48,12 +47,11 @@ def iniciar_interfaz():
                         messagebox.showinfo("Guardado", f"Modelo exportado como {formato} en:\n{ruta}")
                     else:
                         messagebox.showerror("Error", "No se pudo guardar el modelo.")
-                mostrar_modelo()  # Mostrar el modelo generado
+                mostrar_modelo()
 
     def visualizar_modelo():
         mostrar_modelo()
 
-    # Botones GUI
     ttk.Button(ventana, text="Cargar Imágenes", command=cargar_imagenes).pack(pady=10)
     ttk.Button(ventana, text="Visualizar Modelo", command=visualizar_modelo).pack(pady=10)
 
