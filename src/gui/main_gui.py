@@ -1,7 +1,7 @@
 import os
 import shutil
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from src.gui.file_dialogs import seleccionar_imagenes
 from src.processing.reconstruction import reconstruir_desde_imagenes
 from src.processing.visualization import mostrar_modelo
@@ -47,10 +47,19 @@ def iniciar_interfaz():
                         messagebox.showinfo("Guardado", f"Modelo exportado como {formato} en:\n{ruta}")
                     else:
                         messagebox.showerror("Error", "No se pudo guardar el modelo.")
-                mostrar_modelo()
+                #mostrar_modelo()
 
     def visualizar_modelo():
-        mostrar_modelo()
+        ruta_modelo = filedialog.askopenfilename(
+            title="Selecciona el archivo del modelo",
+            filetypes=[("Modelos 3D", "*.glb *.obj *.fbx")]
+        )
+
+        if not ruta_modelo:
+            print("[INFO] No se seleccionó ningún archivo.")
+            return
+
+        mostrar_modelo(ruta_modelo)
 
     ttk.Button(ventana, text="Cargar Imágenes", command=cargar_imagenes).pack(pady=10)
     ttk.Button(ventana, text="Visualizar Modelo", command=visualizar_modelo).pack(pady=10)
