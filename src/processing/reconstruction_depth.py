@@ -17,6 +17,9 @@ def cargar_modelo_midas(peso="src/models/midas/weights/dpt_hybrid_384.pt"):
     return modelo
 
 def estimar_profundidad(imagen_path, modelo):
+    print(imagen_path)
+    imagen_path = imagen_path.replace("\\", "/")
+    print("Ruta corregida:", imagen_path)
     imagen = cv2.imread(imagen_path)
     imagen_rgb = cv2.cvtColor(imagen, cv2.COLOR_BGR2RGB)
     transform = T.Compose([
@@ -35,7 +38,7 @@ def estimar_profundidad(imagen_path, modelo):
     depth = prediction.squeeze().cpu().numpy()
     return depth, imagen_rgb
 
-def generar_nube_puntos(depth, imagen_rgb, altura_maxima=50):
+def generar_nube_puntos(depth, imagen_rgb, altura_maxima=100):
     h, w = depth.shape
     xx, yy = np.meshgrid(np.arange(0, w), np.arange(0, h))
     x = xx.flatten()
@@ -58,27 +61,29 @@ def generar_nube_puntos(depth, imagen_rgb, altura_maxima=50):
 
     return pcd
 
-def generar_relieve_desde_profundidad(depth, imagen_rgb=None, escala=1.0, altura_maxima=50):
+def generar_relieve_desde_profundidad(depth, imagen_rgb, escala=1.0, altura_maxima=100):
     h, w = depth.shape
     puntos = []
     colores = []
 
+    # Normalizar la profundidad fuera del bucle
+    z_min = np.min(depth)
+    z_max = np.max(depth)
+    depth_normalizada = (depth - z_min) / (z_max - z_min + 1e-8)
+    depth_escalada = depth_normalizada * altura_maxima * escala
+
     for y in range(h):
         for x in range(w):
-            z = depth[y, x] * escala
-            # Normalizar la profundidad
-            z_min = np.min(depth)
-            z_max = np.max(depth)
-            z_norm = (z - z_min) / (z_max - z_min + 1e-8)
-            z_escalado = z_norm * altura_maxima
-            puntos.append([x, y, z_escalado])
+            z = depth_escalada[y, x]
+            puntos.append([x, y, z])
             if imagen_rgb is not None:
-                colores.append(imagen_rgb[y, x] / 255.0)
+                color = imagen_rgb[y, x] / 255.0
+                colores.append(color.astype(np.float32))
             else:
                 colores.append([0.5, 0.5, 0.5])  # Gris neutro
 
-    puntos = np.array(puntos)
-    colores = np.array(colores)
+    puntos = np.array(puntos, dtype=np.float32)
+    colores = np.array(colores, dtype=np.float32)
 
     faces = []
     for y in range(h - 1):
@@ -89,12 +94,13 @@ def generar_relieve_desde_profundidad(depth, imagen_rgb=None, escala=1.0, altura
 
     malla = o3d.geometry.TriangleMesh()
     malla.vertices = o3d.utility.Vector3dVector(puntos)
-    malla.triangles = o3d.utility.Vector3iVector(np.array(faces))
+    malla.triangles = o3d.utility.Vector3iVector(np.array(faces, dtype=np.int32))
     malla.vertex_colors = o3d.utility.Vector3dVector(colores)
     malla.compute_vertex_normals()
+
     return malla
 
-def reconstruir_3d_desde_imagen(imagen_path, altura_maxima=50):
+def reconstruir_3d_desde_imagen(imagen_path, altura_maxima=100):
     # Obtener el nombre base sin extensión del archivo
     nombre = os.path.splitext(os.path.basename(imagen_path))[0]
 

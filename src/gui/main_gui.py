@@ -1,13 +1,13 @@
 import os
 import shutil
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox
 
 from src.gui.file_dialogs import seleccionar_imagenes
 from src.processing.reconstruction_depth import reconstruir_3d_desde_imagen as reconstruccion_midas
 from src.processing.reconstruction_colmap import ejecutar_colmap as reconstruccion_colmap
 from src.processing.visualization import mostrar_modelo
-from src.utils.file_utils import guardar_modelo
+#from src.utils.file_utils import guardar_modelo
 
 rutas_imagenes = []
 
@@ -57,16 +57,10 @@ def iniciar_interfaz():
         if len(rutas_imagenes) == 1:
             modelo_generado = reconstruccion_midas(rutas_imagenes[0])
         else:
-            modelo_generado = reconstruccion_colmap("data/input", "data/output")
+            modelo_generado = reconstruccion_colmap(rutas_imagenes, "data/output")
 
         if modelo_generado:
-            respuesta = messagebox.askyesno("Guardar Modelo", "¿Deseas guardar el modelo generado?")
-            if respuesta:
-                formato, ruta = guardar_modelo()
-                if ruta:
-                    messagebox.showinfo("Guardado", f"Modelo exportado como {formato} en:\n{ruta}")
-                else:
-                    messagebox.showerror("Error", "No se pudo guardar el modelo.")
+            messagebox.showinfo("Éxito", "El modelo se generó y guardó automáticamente en la carpeta de salida.")
         else:
             messagebox.showerror("Error", "No se generó el modelo correctamente.")
 

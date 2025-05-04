@@ -1,46 +1,89 @@
 import os
 import subprocess
+import shutil
+import uuid
 
-def ejecutar_colmap(imagenes_dir, salida_dir):
-    matches_dir = os.path.join(salida_dir, "matches")
+def ejecutar_colmap(lista_rutas_imagenes, salida_dir):
+    # Crear carpeta temporal con un nombre único
+    temp_id = str(uuid.uuid4())
+    imagenes_dir = os.path.join("data", "temp_colmap_input", temp_id)
+    os.makedirs(imagenes_dir, exist_ok=True)
+
+    # Copiar las imágenes seleccionadas por el usuario
+    for ruta in lista_rutas_imagenes:
+        nombre = os.path.basename(ruta)
+        destino = os.path.join(imagenes_dir, nombre)
+        if not os.path.exists(destino):
+            shutil.copy(ruta, destino)
+
     sparse_dir = os.path.join(salida_dir, "sparse")
-    model_text_dir = os.path.join(salida_dir, "model_text")
+    model_text_path = os.path.join(salida_dir, "model_text.ply")
+    database_path = os.path.join(salida_dir, "database.db")
 
-    os.makedirs(matches_dir, exist_ok=True)
+    # Limpiar resultados anteriores
+    for carpeta in [sparse_dir]:
+        if os.path.exists(carpeta):
+            shutil.rmtree(carpeta)
+    if os.path.exists(database_path):
+        os.remove(database_path)
+    if os.path.exists(model_text_path):
+        os.remove(model_text_path)
+
     os.makedirs(sparse_dir, exist_ok=True)
 
-    # Ruta completa al ejecutable de COLMAP
+    # Ruta al ejecutable de COLMAP
     colmap_path = os.path.abspath("src/models/colmap/colmap-x64-windows-nocuda/bin/colmap.exe")
+    qt_plugin_path = os.path.abspath("src/models/colmap/colmap-x64-windows-nocuda/plugins")
+    print(f"[DEBUG] Plugin Qt: {qt_plugin_path}")
+    print(f"[DEBUG] Existe directorio plugins: {os.path.exists(qt_plugin_path)}")
+    os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = qt_plugin_path
 
-    # Ejecutar los comandos de COLMAP
-    subprocess.run([colmap_path, "feature_extractor",
-                    "--database_path", os.path.join(salida_dir, "database.db"),
-                    "--image_path", imagenes_dir], check=True)
+    print(f"[DEBUG] Ejecutando COLMAP desde: {colmap_path}")
 
-    subprocess.run([colmap_path, "exhaustive_matcher",
-                    "--database_path", os.path.join(salida_dir, "database.db")], check=True)
+    print("[INFO] Iniciando extracción de características...")
+    subprocess.run([
+        colmap_path, "feature_extractor",
+        "--database_path", database_path,
+        "--image_path", imagenes_dir
+    ], check=True)
+    print("[INFO] Características extraídas.")
 
-    subprocess.run([colmap_path, "mapper",
-                    "--database_path", os.path.join(salida_dir, "database.db"),
-                    "--image_path", imagenes_dir,
-                    "--output_path", sparse_dir], check=True)
+    try:
+        result = subprocess.run([
+            colmap_path, "exhaustive_matcher",
+            "--database_path", database_path
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        print("[ERROR] Falló exhaustive_matcher:", e)
+        raise
+    print("[STDOUT]", result.stdout)
+    print("[STDERR]", result.stderr)
 
-    subprocess.run([colmap_path, "model_converter",
-                    "--input_path", sparse_dir,
-                    "--output_path", model_text_dir,
-                    "--output_type", "PLY"], check=True)
+    subprocess.run([
+        colmap_path, "mapper",
+        "--database_path", database_path,
+        "--image_path", imagenes_dir,
+        "--output_path", sparse_dir
+    ], check=True)
 
-    # Obtener nombre de la primera imagen
-    primera_imagen = os.listdir(imagenes_dir)[0]
-    nombre_modelo = os.path.splitext(primera_imagen)[0]
+    subprocess.run([
+        colmap_path, "model_converter",
+        "--input_path", os.path.join(sparse_dir, "0"),
+        "--output_path", model_text_path,
+        "--output_type", "PLY"
+    ], check=True)
 
-    modelo_ply = os.path.join(model_text_dir, "model.ply")
+    modelo_ply = os.path.join(model_text_path, "model_text.ply")
     if os.path.exists(modelo_ply):
-        print(f"[INFO] Modelo generado en formato PLY: {modelo_ply}")
+        nombre_modelo = os.path.splitext(os.path.basename(lista_rutas_imagenes[0]))[0]
+        ruta_salida_ply = os.path.join("data", "output", f"{nombre_modelo}_colmap.ply")
+        shutil.move(modelo_ply, ruta_salida_ply)
 
-        ruta_salida_ply = os.path.join("data", "output", f"{nombre_modelo}.ply")
-        os.rename(modelo_ply, ruta_salida_ply)
+        # Limpiar input temporal
+        shutil.rmtree(imagenes_dir, ignore_errors=True)
 
-        print(f"[INFO] Modelo guardado como PLY en: {ruta_salida_ply}")
+        print(f"[INFO] Modelo generado y guardado en: {ruta_salida_ply}")
+        return ruta_salida_ply
     else:
-        print(f"[ERROR] El modelo PLY no se generó correctamente en {model_text_dir}")
+        print(f"[ERROR] El modelo PLY no se generó correctamente en {model_text_path}")
+        return None
