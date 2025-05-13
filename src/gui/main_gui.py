@@ -13,7 +13,7 @@ rutas_imagenes = []
 
 # Función para mover las imágenes seleccionadas a data/input
 def mover_imagenes_a_input(imagenes):
-    directorio_destino = "data/input"
+    directorio_destino = "data/output/images-test"
     os.makedirs(directorio_destino, exist_ok=True)
 
     rutas_destino = []
