@@ -44,27 +44,41 @@ def ejecutar_colmap(lista_rutas_imagenes, salida_dir):
     subprocess.run([
         colmap_path, "feature_extractor",
         "--database_path", database_path,
-        "--image_path", imagenes_dir
+        "--image_path", imagenes_dir,
+        "--SiftExtraction.max_num_features", "15000",
+        "--SiftExtraction.peak_threshold", "0.003",
+        "--SiftExtraction.edge_threshold", "10"
     ], check=True)
     print("[INFO] Características extraídas.")
 
     try:
         result = subprocess.run([
             colmap_path, "exhaustive_matcher",
-            "--database_path", database_path
-        ], check=True)
+            "--database_path", database_path,
+            "--ExhaustiveMatching.block_size", "50"
+        ], check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         print("[ERROR] Falló exhaustive_matcher:", e)
+        print("[STDOUT]", e.stdout)
+        print("[STDERR]", e.stderr)
         raise
+
+    print("[INFO] Coincidencias generadas exitosamente.")
     print("[STDOUT]", result.stdout)
     print("[STDERR]", result.stderr)
 
     subprocess.run([
-        colmap_path, "mapper",
-        "--database_path", database_path,
-        "--image_path", imagenes_dir,
-        "--output_path", sparse_dir
-    ], check=True)
+    colmap_path, "mapper",
+    "--database_path", database_path,
+    "--image_path", imagenes_dir,
+    "--output_path", sparse_dir,
+    "--Mapper.ba_local_max_num_iterations", "50",  # Más refinamiento local
+    "--Mapper.ba_global_max_num_iterations", "100",  # Más refinamiento global
+    "--Mapper.init_min_num_inliers", "50",  # Permite inicialización más fácil
+    "--Mapper.init_max_error", "6",  # Más tolerancia al error en la inicialización
+    "--Mapper.abs_pose_min_num_inliers", "25",
+    "--Mapper.abs_pose_max_error", "10"
+], check=True)
 
     subprocess.run([
         colmap_path, "model_converter",
