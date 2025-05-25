@@ -3,11 +3,10 @@ import shutil
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from src.gui.file_dialogs import seleccionar_imagenes
+from src.gui.file_dialogs import seleccionar_imagenes, seleccionar_modelo
 from src.processing.reconstruction_depth import reconstruir_3d_desde_imagen as reconstruccion_midas
 from src.processing.reconstruction_colmap import ejecutar_colmap as reconstruccion_colmap
 from src.processing.visualization import mostrar_modelo
-#from src.utils.file_utils import guardar_modelo
 
 rutas_imagenes = []
 
@@ -55,12 +54,19 @@ def iniciar_interfaz():
 
         # Reconstrucción
         if len(rutas_imagenes) == 1:
-            modelo_generado = reconstruccion_midas(rutas_imagenes[0])
+            reconstruccion_midas(rutas_imagenes[0])
         else:
-            modelo_generado = reconstruccion_colmap(rutas_imagenes, "data/output")
+            reconstruccion_colmap(rutas_imagenes, "data/output")
 
     def visualizar_modelo():
-        mostrar_modelo()
+        global ruta_modelo
+        ruta_modelo = seleccionar_modelo()
+
+        if not ruta_modelo:
+            messagebox.showwarning("Advertencia", "No se seleccionaron imágenes.")
+            return
+        
+        mostrar_modelo(ruta_modelo)
 
     ttk.Button(ventana, text="Cargar Imágenes y Reconstruir", command=cargar_imagenes).pack(pady=15)
     ttk.Button(ventana, text="Visualizar Modelo Existente", command=visualizar_modelo).pack(pady=10)

@@ -1,40 +1,26 @@
-import subprocess
+import open3d as o3d
 import os
-from tkinter import filedialog
 
-def mostrar_modelo():
-    # Cuadro de diálogo para que el usuario seleccione el archivo
-    ruta_modelo = filedialog.askopenfilename(
-        title="Selecciona un archivo de modelo 3D",
-        filetypes=[("Archivos GLTF", "*.glb"), ("Archivos OBJ", "*.obj"), ("Archivos PLY", "*.ply")]
-    )
-    
-    if not ruta_modelo:
-        print("[ERROR] No se seleccionó ningún archivo.")
-        return
-
-    # Verificar si el archivo existe
+def mostrar_modelo(ruta_modelo):
     if not os.path.exists(ruta_modelo):
-        print(f"[ERROR] El archivo {ruta_modelo} no existe.")
+        print(f"[ERROR] El archivo no existe: {ruta_modelo}")
         return
 
-    # Ruta al ejecutable de Blender
-    blender_exe = r"c:\Users\molly\Downloads\blender-4.3.2-windows-x64\blender-4.3.2-windows-x64\blender.exe"  # Asegúrate de tener la ruta correcta
-    script_path = os.path.abspath("src/processing/visualization_blender.py")  # Ruta al script de Blender
+    extension = os.path.splitext(ruta_modelo)[1].lower()
 
-    # Convertir la ruta del archivo a absoluta
-    ruta_modelo_absoluta = os.path.abspath(ruta_modelo)
+    modelo = o3d.io.read_triangle_mesh(ruta_modelo)
+    if not modelo.has_triangles():
+        modelo = o3d.io.read_point_cloud(ruta_modelo)
 
-    command = [
-        blender_exe,
-        "--background",  # Ejecuta Blender en segundo plano sin interfaz gráfica
-        "--python", script_path,
-        "--", ruta_modelo_absoluta  # Pasamos el archivo seleccionado como argumento
-    ]
+    # Crear visualizador personalizado
+    vis = o3d.visualization.Visualizer()
+    vis.create_window(window_name="Visualización 3D")
 
-    try:
-        subprocess.run(command, check=True)
-        print(f"[INFO] Modelo generado exitosamente con Blender: {ruta_modelo_absoluta}")
-    except subprocess.CalledProcessError as e:
-        print("[ERROR] Falló la visualización con Blender.")
-        print(e)
+    vis.add_geometry(modelo)
+
+    # Fondo gris (RGB entre 0 y 1)
+    opt = vis.get_render_option()
+    opt.background_color = [0.8, 0.8, 0.8]  # Gris claro
+
+    vis.run()
+    vis.destroy_window()
