@@ -59,11 +59,6 @@ def iniciar_interfaz():
         else:
             modelo_generado = reconstruccion_colmap(rutas_imagenes, "data/output")
 
-        if modelo_generado:
-            messagebox.showinfo("Éxito", "El modelo se generó y guardó automáticamente en la carpeta de salida.")
-        else:
-            messagebox.showerror("Error", "No se generó el modelo correctamente.")
-
     def visualizar_modelo():
         mostrar_modelo()
 
