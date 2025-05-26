@@ -37,8 +37,8 @@ def ejecutar_colmap(lista_rutas_imagenes, salida_dir):
         colmap_path, "feature_extractor",
         "--database_path", database_path,
         "--image_path", imagenes_dir,
-        "--SiftExtraction.max_num_features", "25000",
-        "--SiftExtraction.peak_threshold", "0.0025",
+        "--SiftExtraction.max_num_features", "45000",
+        "--SiftExtraction.peak_threshold", "0.001",
         "--SiftExtraction.edge_threshold", "10"
     ], check=True)
 
